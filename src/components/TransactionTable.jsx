@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export const TransactionTable = ({ transactions }) => {
+export const TransactionTable = ({ transactions, role }) => {
   const [sortType, setSortType] = useState("date");
 
   const sorted = [...transactions].sort((a, b) => {
@@ -19,29 +19,52 @@ export const TransactionTable = ({ transactions }) => {
         </select>
       </div>
 
-      <table className="w-full text-sm">
-        <thead className="text-slate-400">
-          <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Date</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
+      {/* ✅ Admin Add Button */}
+      {role === "admin" && (
+        <button className="mb-4 px-4 py-2 bg-blue-600 text-white rounded-xl">
+          + Add Transaction
+        </button>
+      )}
 
-        <tbody>
-          {sorted.map(tx => (
-            <tr key={tx.id} className="border-t">
-              <td>{tx.name}</td>
-              <td>{tx.category}</td>
-              <td>{tx.date}</td>
-              <td className={tx.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                {tx.amount}
-              </td>
+      {/* ✅ EMPTY STATE */}
+      {transactions.length === 0 ? (
+        <p className="text-center text-slate-400 py-6">
+          No transactions found
+        </p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead className="text-slate-400">
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Date</th>
+              <th>Amount</th>
+              {role === "admin" && <th>Actions</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {sorted.map(tx => (
+              <tr key={tx.id} className="border-t">
+                <td>{tx.name}</td>
+                <td>{tx.category}</td>
+                <td>{tx.date}</td>
+                <td className={tx.type === 'income' ? 'text-green-600' : 'text-red-600'}>
+                  {tx.amount}
+                </td>
+
+                {/* ✅ Admin Actions */}
+                {role === "admin" && (
+                  <td>
+                    <button className="text-blue-600 mr-2">Edit</button>
+                    <button className="text-red-600">Delete</button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };

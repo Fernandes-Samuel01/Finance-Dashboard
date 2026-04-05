@@ -12,8 +12,14 @@ export const Insights = ({ transactions }) => {
 
   const highestCategory = Object.entries(categoryMap).sort((a, b) => b[1] - a[1])[0];
 
+  // ✅ NEW TREND LOGIC
+  const trend =
+    totalIncome > totalExpense
+      ? "You're saving money this period 💰"
+      : "Your expenses are higher than income ⚠️";
+
   return (
-    <div className="bg-white p-6 rounded-2xl border">
+    <div className="bg-white p-6 rounded-2xl border mt-10">
       <h3 className="font-bold mb-4">Smart Insights</h3>
 
       <p className="text-sm text-slate-600">
@@ -30,6 +36,11 @@ export const Insights = ({ transactions }) => {
 
       <p className="text-sm text-slate-600 mt-2">
         💰 Net: <b>${totalIncome - totalExpense}</b>
+      </p>
+
+      {/* ✅ NEW */}
+      <p className="text-sm text-blue-600 mt-4 font-semibold">
+        {trend}
       </p>
     </div>
   );

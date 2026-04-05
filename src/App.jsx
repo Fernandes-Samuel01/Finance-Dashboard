@@ -2,7 +2,19 @@ import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { StatCard } from './components/StatCard';
 import { Wallet, TrendingUp, ArrowDownRight, Bell, Search, CreditCard } from 'lucide-react';
-import { AreaChart, Area, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 import { MOCK_DATA } from './data';
 import { calculateStats } from './utils/calculations';
 import { Insights } from './components/Insights';
@@ -14,9 +26,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
 
+  // ✅ NEW ROLE STATE
+  const [role, setRole] = useState('viewer');
+
   const now = new Date();
 
-  // ✅ FINAL FILTER LOGIC (REAL DATE FILTER)
+  // ✅ FILTER LOGIC
   const filteredTransactions = MOCK_DATA.transactions.filter(tx => {
     const txDate = new Date(tx.date);
 
@@ -45,10 +60,24 @@ export default function App() {
 
   // ✅ CHART DATA
   const chartData = filteredTransactions.map(tx => ({
-    name: new Date(tx.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+    name: new Date(tx.date).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short'
+    }),
     income: tx.type === 'income' ? tx.amount : 0,
     expense: tx.type === 'expense' ? Math.abs(tx.amount) : 0
   }));
+
+  // ✅ CATEGORY PIE DATA
+  const categoryData = Object.values(
+    filteredTransactions
+      .filter(tx => tx.type === 'expense')
+      .reduce((acc, tx) => {
+        acc[tx.category] = acc[tx.category] || { name: tx.category, value: 0 };
+        acc[tx.category].value += Math.abs(tx.amount);
+        return acc;
+      }, {})
+  );
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC]">
@@ -79,7 +108,7 @@ export default function App() {
               />
             </div>
 
-            {/* ✅ DATE FILTER */}
+            {/* DATE FILTER */}
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
@@ -88,6 +117,16 @@ export default function App() {
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
+            </select>
+
+            {/* ✅ ROLE SWITCH */}
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="px-4 py-3 border rounded-2xl"
+            >
+              <option value="viewer">Viewer</option>
+              <option value="admin">Admin</option>
             </select>
 
             {/* NOTIFICATION */}
@@ -101,7 +140,7 @@ export default function App() {
         {/* OVERVIEW */}
         {view === 'Overview' && (
           <>
-            {/* ✅ STATS */}
+            {/* STATS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
               <div onClick={() => setFilterType('all')}>
                 <StatCard title="Total Balance" value={`$${stats.balance}`} subtext={`${stats.growth}%`} icon={Wallet} />
@@ -116,7 +155,7 @@ export default function App() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-              {/* ✅ CHART */}
+              {/* AREA CHART */}
               <div className="lg:col-span-2 bg-white p-8 rounded-2xl border">
                 <h3 className="mb-6 font-bold">Activity</h3>
 
@@ -136,29 +175,54 @@ export default function App() {
                 </ResponsiveContainer>
               </div>
 
-              {/* ✅ TRANSACTION LIST */}
+              {/* RECENT TRANSACTIONS */}
               <div className="bg-white p-8 rounded-2xl border">
                 <h3 className="mb-6 font-bold">Recent</h3>
 
-                {filteredTransactions.map(tx => (
-                  <div key={tx.id} className="flex justify-between mb-4">
-                    <div>
-                      <p className="font-bold">{tx.name}</p>
-                      <p className="text-xs text-slate-400">{tx.category}</p>
+                {filteredTransactions.length === 0 ? (
+                  <p className="text-slate-400">No transactions</p>
+                ) : (
+                  filteredTransactions.map(tx => (
+                    <div key={tx.id} className="flex justify-between mb-4">
+                      <div>
+                        <p className="font-bold">{tx.name}</p>
+                        <p className="text-xs text-slate-400">{tx.category}</p>
+                      </div>
+                      <p className={tx.type === 'income' ? 'text-green-600' : 'text-red-600'}>
+                        {tx.amount}
+                      </p>
                     </div>
-                    <p className={tx.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                      {tx.amount}
-                    </p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
-            {/* ✅ INSIGHTS */}
+            {/* ✅ PIE CHART */}
+            <div className="bg-white p-8 rounded-2xl border mt-10">
+              <h3 className="mb-6 font-bold">Spending Breakdown</h3>
+
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={100}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* INSIGHTS */}
             <Insights transactions={filteredTransactions} />
 
-            {/* ✅ FULL TABLE */}
-            <TransactionTable transactions={filteredTransactions} />
+            {/* TABLE */}
+            <TransactionTable transactions={filteredTransactions} role={role} />
           </>
         )}
 
